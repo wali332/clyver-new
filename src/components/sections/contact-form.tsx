@@ -38,7 +38,7 @@ export function ContactForm() {
     if (isSubmitting) return;
 
     const form = event.currentTarget;
-    const honeypot = String(new FormData(form).get("company-website") ?? "");
+    const honeypot = String(new FormData(form).get("_gotcha") ?? "");
     if (honeypot) return;
 
     const fields = getFields(form);
@@ -48,6 +48,9 @@ export function ContactForm() {
     setErrorMessage("");
 
     if (Object.keys(errors).length > 0) {
+      const firstInvalid = form.querySelector<HTMLElement>("[aria-invalid='true']");
+      firstInvalid?.focus();
+      firstInvalid?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -73,7 +76,12 @@ export function ContactForm() {
 
       form.reset();
       setFieldErrors({});
+      setErrorMessage("");
       setState("success");
+      form.querySelector<HTMLElement>("[aria-live='polite']")?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
     } catch {
       setState("error");
       setErrorMessage(
@@ -85,14 +93,20 @@ export function ContactForm() {
   return (
     <form
       ref={formRef}
+      action={FORMSPREE_ENDPOINT}
+      method="POST"
       className="relative min-w-0 max-w-full space-y-5"
       onSubmit={handleSubmit}
       noValidate
     >
-      <div className="absolute left-[-9999px] h-px w-px overflow-hidden" aria-hidden="true">
-        <label htmlFor="company-website">Company website</label>
-        <input id="company-website" name="company-website" type="text" tabIndex={-1} autoComplete="off" />
-      </div>
+      <input
+        type="text"
+        name="_gotcha"
+        tabIndex={-1}
+        autoComplete="off"
+        className="hidden"
+        aria-hidden="true"
+      />
 
       <div className="grid gap-5 md:grid-cols-2">
         <div>
@@ -182,7 +196,7 @@ export function ContactForm() {
           type="submit"
           size="lg"
           className="w-full sm:w-auto"
-          disabled={isSubmitting || state === "success"}
+          disabled={isSubmitting}
         >
           {isSubmitting ? "Sending..." : "Tell Us What You're Solving"}
         </Button>
